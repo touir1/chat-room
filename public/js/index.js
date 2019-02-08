@@ -127,16 +127,52 @@ $(function () {
 		$('#tab1').removeClass('login-shadow');
 	});
 	
-	$('#myModal').modal({
-		show: 'true',
-		backdrop: 'static', 
-		keyboard: false
-	});
-	
 	var username = "";
 	var connectedEmail = "";
 	
 	//$('#signInBtn').click();
+	
+	if(Cookies.get('email') !== "undefined" && Cookies.get('password') != "undefined"){
+		$.post( "/api/connection", { email: Cookies.get('email'), password: Cookies.get('password') }, function( data ) {
+			if(data != "failed"){
+				console.log('connection done');
+				console.log(data);
+				connectedEmail = data.email;
+				username = data.firstname + " " + data.lastname;
+				
+				$('#body-div').show();
+				socketManager();
+			}
+			else
+			{
+				$('#myModal').modal({
+					show: 'true',
+					backdrop: 'static', 
+					keyboard: false
+				});
+				
+				console.log('error, connection not done');
+			}
+		})
+		.fail(function(err) {
+			console.log(err);
+			console.log('error, connection not done');
+			
+			$('#myModal').modal({
+				show: 'true',
+				backdrop: 'static', 
+				keyboard: false
+			});
+		});
+	}
+	else
+	{
+		$('#myModal').modal({
+			show: 'true',
+			backdrop: 'static', 
+			keyboard: false
+		});
+	}
 	
 	$('#confirmsignup').on('click',function(event){
 		if($('#signupForm')[0].checkValidity()){
@@ -161,6 +197,10 @@ $(function () {
 					//console.log(data);
 					connectedEmail = emailValue.toLowerCase().trim();
 					username = firstnameValue.toTitleCase().trim() + " " + lastnameValue.toTitleCase().trim();
+					
+					Cookies.set('email',emailValue.toLowerCase().trim());
+					Cookies.set('password',md5(passwordValue));
+					
 					$('#inscription-error').hide();
 					$('#myModal').modal('hide');
 					$('#body-div').show();
@@ -188,32 +228,16 @@ $(function () {
 			
 			console.log(emailValue.toLowerCase().trim(),passwordValue+ " => "+md5(passwordValue));
 			
-			/*
-			$.ajax({
-			   type: 'POST',
-			   url: currentURL+'api/inscription',
-			   data: { 'username': "touir1", 'password': "test" },
-			   dataType: 'jsonp',
-			   contentType:"application/json; charset=utf-8"
-			})
-			.done(function(data) {
-				console.log('insert done');
-				console.log(data);
-				$('#myModal').modal('hide');
-				$('#body-div').show();
-			})
-			.fail(function(err) {
-				console.log(err);
-				console.log('error');
-			});
-			*/
-			
 			$.post( "/api/connection", { email: emailValue.toLowerCase().trim(), password: md5(passwordValue) }, function( data ) {
 				if(data != "failed"){
 					console.log('connection done');
 					console.log(data);
 					connectedEmail = data.email;
 					username = data.firstname + " " + data.lastname;
+					
+					Cookies.set('email',emailValue.toLowerCase().trim());
+					Cookies.set('password',md5(passwordValue));
+					
 					$('#login-error').hide();
 					$('#myModal').modal('hide');
 					$('#body-div').show();
