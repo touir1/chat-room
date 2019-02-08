@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "chat room application",
   "dependencies": {
+    "body-parser": "^1.18.3",
     "express": "^4.15.2",
     "socket.io": "^1.7.3",
     "sqlite3": "^4.0.6"
