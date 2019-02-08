@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var bodyParser = require("body-parser");
+var _ = require('lodash');
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
@@ -12,6 +13,9 @@ var db = new sqlite3.Database('chatapp');
 
 var authorizedIPs = [];
 var authorizedUsernames = [];
+
+var connectedUsers = [];
+var connectedEmails = [];
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -56,19 +60,20 @@ app.get('/username', function(req, res){
 app.post('/api/inscription', function(req, res) {
 	console.log(' => /api/inscription');
 	console.log(req.body);
-    var username = req.body.email;
+    var email = req.body.email;
     var password = req.body.password;
 	var firstname = req.body.firstname;
 	var lastname = req.body.lastname;
 	
-	console.log(username,password);
+	console.log(email,password);
 	
-	db.run("INSERT INTO users (email, password,firstname,lastname) VALUES (?,?,?,?)",username,password,firstname,lastname, function(err){
+	db.run("INSERT INTO users (email, password,firstname,lastname) VALUES (?,?,?,?)",email,password,firstname,lastname, function(err){
 		if(err){
 			console.log(err);
 			res.send("failed");
 		}
 		else{
+			connectedEmails.push(email);
 			res.send("success");
 		}
 	});
@@ -91,6 +96,7 @@ app.post('/api/connection', function(req, res) {
 		else{
 			console.log(result);
 			if(result){
+				connectedEmails.push(email);
 				res.json(result);
 			}
 			else{
@@ -102,9 +108,26 @@ app.post('/api/connection', function(req, res) {
 });
 
 io.on('connection', function(socket){
-  socket.on('chat message', function(msg){
-    io.emit('chat message', msg);
-  });
+  var emailValue = socket.handshake.query.email;
+  if(emailValue && connectedEmails.indexOf(emailValue)>-1){
+	  
+	  connectedUsers.push({email: emailValue,socketid: socket.id});
+	  console.log('user with email '+ emailValue + ' connected');
+		
+	  socket.on('chat message', function(msg){
+		io.emit('chat message', msg);
+	  });
+	  
+	  socket.on('disconnect', function () {
+		console.log('user with email '+ emailValue + ' disconnected');
+		connectedUsers = _.remove(connectedUsers, function(el) {
+			return el.email == emailValue;
+		});
+	  });
+  }
+  else{
+	  socket.disconnect();
+  }
 });
 
 http.listen(port, function(){
