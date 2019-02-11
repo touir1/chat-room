@@ -262,7 +262,12 @@ $(function () {
 		$('form').submit(function(){
 			var msg = $('#m').val().trim();
 			if(msg){
-				socket.emit('chat message', "<b>" + username + " : " + "</b>" + $('#m').val());
+				socket.emit('chat message',	{
+					email: connectedEmail,
+					username: username,
+					message: msg,
+					room: 'General'
+				}); // "<b>" + username + " : " + "</b>" + $('#m').val()
 				$('#m').val('');
 			}
 			return false;
@@ -279,6 +284,7 @@ $(function () {
 					document.title = titleA;
 				}
 			}
+			/*
 			if(msg.startsWith("<b>" + username + " : " + "</b>")){
 				msg = "<b><font color='blue'>" + username + " : " + "</font></b>" + msg.substring(msg.indexOf("</b>"));
 			}
@@ -286,11 +292,36 @@ $(function () {
 			{
 				playNewMessageSound();
 			}
-			$('#messages').append($('<li>'+msg).html(msg));
+			*/
+			var messageToShow = "";
+			if(msg.email == connectedEmail){
+				messageToShow = "<b><font color='blue'>" + msg.username + " : </font></b>" + msg.message;
+			}
+			else {
+				messageToShow = "<b>" + msg.username + " : </b>" + msg.message;
+				playNewMessageSound();
+			}
+			$('#messages').append($('<li>'+messageToShow).html(messageToShow));
 			//var bottom = $("#messages").offset().top;
 			$("#messages").scrollTop($('#messages li:last-child').last().position().top);
 			//$('#messages li:last-child').last().position().top
 			//window.scrollTo(0, $('#messages li:last-child').last().prop("scrollHeight"));
+		});
+		
+		socket.on('load general messages', function(msgs){
+			console.log(msgs);
+			for(let i=0;i< msgs.length;i++){
+				var message = msgs[i];
+				var messageToShow = "";
+				if(message.email == connectedEmail){
+					messageToShow = "<b><font color='blue'>" + message.username + " : </font></b>" + message.message;
+				}
+				else {
+					messageToShow = "<b>" + message.username + " : </b>" + message.message;
+				}
+				$('#messages').append($('<li>'+messageToShow).html(messageToShow));
+			}
+			
 		});
 	}
 	
