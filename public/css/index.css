@@ -226,3 +226,9 @@ background-size:cover;
 z-index:4;}
 
 em{display:none;}
+
+#menu-box {
+	height: 2rem;
+	width: 2rem;
+	font-size: 1.3rem;
+}

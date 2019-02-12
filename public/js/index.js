@@ -257,6 +257,16 @@ $(function () {
 		}
 	});
 	
+	$('#disconnect').on('click',function(event){
+		disconnect();
+	});
+	
+	function disconnect(){
+		Cookies.remove('email');
+		Cookies.remove('password');
+		location.reload(true);
+	}
+	
 	function socketManager() {
 		var socket = io(window.location.origin,{query: 'email='+connectedEmail});
 		$('form').submit(function(){

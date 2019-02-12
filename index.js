@@ -108,7 +108,7 @@ app.post('/api/connection', function(req, res) {
 			return console.error(err.message);
 		}
 		else{
-			console.log(result);
+			//console.log(result);
 			if(result){
 				connectedEmails.push(email);
 				res.json(result);
@@ -153,7 +153,7 @@ io.on('connection', function(socket){
 				}
 				else{
 					if(result){
-						console.log(result);
+						//.log(result);
 						adminUser.id = result.id;
 						db.all("SELECT message, users.firstname || ' ' || users.lastname username, users.email FROM messages, rooms, users WHERE messages.idroom = rooms.id AND messages.iduser = users.id AND rooms.iduser = ? AND rooms.roomname = 'General' ORDER BY messages.id", adminUser.id ,function(err1, result1){
 							if(err1){
