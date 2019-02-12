@@ -1,13 +1,18 @@
-var express = require('express');
-var app = express();
-var bodyParser = require("body-parser");
-var _ = require('lodash');
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var port = process.env.PORT || 3000;
+const express = require('express');
+const app = express();
+const bodyParser = require("body-parser");
+const _ = require('lodash');
+const fs = require('fs');
+const md5 = require('js-md5');
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+const port = process.env.PORT || 3000;
+const propertiesReader = require('properties-reader');
 
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('chatapp');
+const sqlite3 = require('sqlite3').verbose();
+
+const prop = propertiesReader('configuration/admin.properties');
+function getProperty(property){return String(prop.get(property)) || "";}
 
 //db.close();
 
@@ -22,11 +27,15 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 
 var adminUser = {
-	email: "admin@admin.com",
-	password: "882baf28143fb700b388a87ef561a6e5",
-	firstname: "System",
-	lastname: "Administrator"
+	email: getProperty("ADMIN.EMAIL"),
+	password: md5(getProperty("ADMIN.PASSWORD")),
+	firstname: getProperty("ADMIN.FIRSTNAME"),
+	lastname: getProperty("ADMIN.LASTNAME")
 }
+
+const db = new sqlite3.Database(getProperty('DATABASE.NAME'));
+const db_create = fs.readFileSync('configuration/database_create.sql', 'utf8');
+const db_reset = fs.readFileSync('configuration/database_reset.sql', 'utf8');
 
 app.get('/', function(req, res){
 	
@@ -196,30 +205,39 @@ io.on('connection', function(socket){
 
 http.listen(port, function(){
 
-	/** Tables creation **/
-	db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, firstname TEXT NOT NULL, lastname TEXT NOT NULL)");
-	db.run("CREATE TABLE IF NOT EXISTS rooms (id INTEGER PRIMARY KEY AUTOINCREMENT, roomname TEXT NOT NULL, iduser INTEGER NOT NULL)");
-	db.run("CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, idroom INTEGER NOT NULL, message TEXT NOT NULL, iduser INTEGER NOT NULL)");
-	
-	/** Tables inserts **/
-	console.log("starting server database configuration");
-	db.run("INSERT INTO users (email, password,firstname,lastname) VALUES (?,?,?,?)", adminUser.email, adminUser.password, adminUser.firstname,adminUser.lastname, function(err){
-		if(err){
-			console.log("admin account already inserted in the user table");
-		}
-		else{
-			console.log("insert admin done");
-		}
-	});
-	
-	db.run("INSERT INTO rooms (roomname, iduser) SELECT 'General' roomname, id iduser FROM users WHERE email = ? AND NOT EXISTS ( SELECT 1 FROM rooms WHERE iduser = (SELECT id FROM users WHERE email = ?) AND roomname = 'General')", adminUser.email, function(err){
-		if(err){
-			console.log("General room already inserted in the rooms table");
-		}
-		else{
-			console.log("insert General room done");
-		}
-	});
+	databaseConfiguration();
 	
 	console.log('listening on *:' + port);
 });
+
+
+function databaseConfiguration(){
+	/** Tables creation **/
+	if("false" == getProperty('DATABASE.DEFAULT.RESET').trim().toLowerCase()){
+		db.exec(db_create);
+	}
+	else{
+		db.exec(db_reset);
+	}
+
+	/** Tables inserts **/
+	db.serialize(function(){
+		db.run("INSERT INTO users (email, password,firstname,lastname) VALUES (?,?,?,?)", adminUser.email, adminUser.password, adminUser.firstname,adminUser.lastname, function(err){
+			if(err){
+				console.log("admin account already inserted in the user table");
+			}
+			else{
+				console.log("insert admin done");
+			}
+		})
+		
+		.run("INSERT INTO rooms (roomname, iduser) SELECT 'General' roomname, id iduser FROM users WHERE email = ?", adminUser.email, function(err){
+			if(err){
+				console.log("General room already inserted in the rooms table");
+			}
+			else{
+				console.log("insert General room done");
+			}
+		});
+	});
+}
