@@ -33,82 +33,6 @@ $(function () {
 		});
 	};
 	
-	/*
-	var username = prompt("Please enter a username","");
-	if(!username || username.trim() == ""){
-		$.ajax({
-		  url: 'https://randomuser.me/api/',
-		  dataType: 'json',
-		  success: function(data) {
-			username = data.results[0].name.first + " " + data.results[0].name.last;
-			
-			var socket = io();
-			$('form').submit(function(){
-			  socket.emit('chat message', "<b>" + username + " : " + "</b>" + $('#m').val());
-			  $('#m').val('');
-			  return false;
-			});
-			socket.on('chat message', function(msg){
-				if(!isTabActive){
-					countMsg++;
-					if(countMsg>0){
-						var newTitle = '(' + countMsg + ') ' + titleA;
-						document.title = newTitle;
-						playNewMessageSound();
-						//console.log(newTitle);
-					}
-					else
-					{
-						document.title = titleA;
-						//console.log(titleA);
-					}
-				}
-			  $('#messages').append($('<li>').html(msg));
-			  window.scrollTo(0, document.body.scrollHeight);
-			});
-		  }
-		});
-	}
-	else
-	{
-		var socket = io();
-		$('form').submit(function(){
-		  socket.emit('chat message', "<b>" + username + " : " + "</b>" + $('#m').val());
-		  $('#m').val('');
-		  return false;
-		});
-		socket.on('chat message', function(msg){
-			if(!isTabActive){
-				countMsg++;
-				if(countMsg>0){
-					var newTitle = '(' + countMsg + ') ' + titleA;
-					document.title = newTitle;
-					playNewMessageSound();
-					//console.log(newTitle);
-				}
-				else
-				{
-					document.title = titleA;
-					//console.log(titleA);
-				}
-			}
-		  
-		  $('#messages').append($('<li>'+msg).html(msg));
-		  window.scrollTo(0, document.body.scrollHeight);
-		});
-	}
-	*/
-	
-	// INSCRIPTION EXAMPLE
-	/*
-	$.post( "/api/inscription", { username: "touir1", password: "test" }, function( data ) {
-		console.log('insert done');
-	}, "json")
-	.fail(function() {
-		alert( "failed to create user" );
-	});
-	*/
-	
 	$('.input').blur(function() {
 		var $this = $(this);
 		if ($this.val())
@@ -130,6 +54,8 @@ $(function () {
 	var username = "";
 	var connectedEmail = "";
 	
+	var connectedUsers = [];
+	
 	//$('#signInBtn').click();
 	
 	if(Cookies.get('email') !== "undefined" && Cookies.get('password') != "undefined"){
@@ -140,7 +66,7 @@ $(function () {
 				connectedEmail = data.email;
 				username = data.firstname + " " + data.lastname;
 				
-				$('#body-div').show();
+				loadChatWindow();
 				socketManager();
 			}
 			else
@@ -203,7 +129,7 @@ $(function () {
 					
 					$('#inscription-error').hide();
 					$('#myModal').modal('hide');
-					$('#body-div').show();
+					loadChatWindow();
 				}
 				else
 				{
@@ -240,7 +166,7 @@ $(function () {
 					
 					$('#login-error').hide();
 					$('#myModal').modal('hide');
-					$('#body-div').show();
+					loadChatWindow();
 				}
 				else
 				{
@@ -333,55 +259,169 @@ $(function () {
 			}
 			
 		});
+		
+		socket.on('connected-user', function(data){
+			if(!connectedUsers[data.email]){
+				loadChatWindow();
+			}
+			changeUserConnectionStatus(data.email,true);
+			//$('.conn_'+connectedUsers[data.email]).removeClass("node-icon-disconnected").addClass("node-icon-connected");
+		});
+		
+		socket.on('disconnected-user', function(data){
+			//loadChatWindow();
+			changeUserConnectionStatus(data.email,false);
+			//$('.conn_'+connectedUsers[data.email]).removeClass("node-icon-connected").addClass("node-icon-disconnected");
+		});
+		
+		socket.on('subscribed-user',function(data){
+			loadChatWindow();
+		});
+		
+		socket.on('disconnect',function(data){
+			disconnect();
+		});
+	}
+	
+	function loadChatWindow(){
+		$('#body-div').show();
+		
+		$.post( "/api/rooms", { email: connectedEmail }, function( data ) {
+			if(data != "failed"){
+				console.log("got rooms data");
+				console.log(data);
+				connectedUsers = {};
+				for(let i in data){
+					connectedUsers[data[i].email] = {iduser: data[i].iduser, email: data[i].email, username: data[i].username};
+				}
+				
+				$('#users-tree').treeview({
+					expandIcon: 'glyphicon glyphicon-chevron-right',
+					collapseIcon: 'glyphicon glyphicon-chevron-down',
+					showBorder: false,
+					highlightSelected: false,
+					// showTags: true,
+					data: getUsersTree(data)
+				});
+			}
+			else
+			{
+				console.log('error, failed to get rooms data');
+			}
+		})
+		.fail(function(err) {
+			console.log(err);
+			console.log('error, failed to get rooms data');
+			
+		});
 	}
 	
 	
 	$('#myModal').on('hidden.bs.modal', function () {
 		socketManager();
-		/*
-		$.get('/username',function(data){
-			username = data;
-			if(!username || username.trim() == ""){
-				username = prompt("Please enter a username","");
-			}
-			
-			var socket = io(window.location.origin,{query: 'email='+connectedEmail});
-			$('form').submit(function(){
-			  socket.emit('chat message', "<b>" + username + " : " + "</b>" + $('#m').val());
-			  $('#m').val('');
-			  return false;
-			});
-			socket.on('chat message', function(msg){
-				if(!isTabActive){
-					countMsg++;
-					if(countMsg>0){
-						var newTitle = '(' + countMsg + ') ' + titleA;
-						document.title = newTitle;
-					}
-					else
-					{
-						document.title = titleA;
-					}
-				}
-				if(msg.startsWith("<b>" + username + " : " + "</b>")){
-					msg = "<b><font color='blue'>" + username + " : " + "</font></b>" + msg.substring(msg.indexOf("</b>"));
-				}
-				else
-				{
-					playNewMessageSound();
-				}
-				$('#messages').append($('<li>'+msg).html(msg));
-				//var bottom = $("#messages").offset().top;
-				//$("#messages").scrollTop(bottom);
-				//$('#messages li:last-child').last().position().top
-				//window.scrollTo(0, $('#messages li:last-child').last().prop("scrollHeight"));
-			});
-		});
-		*/
+
 	});
 	
+	function changeUserConnectionStatus(email, state){
+		var user = connectedUsers[email];
+		// console.log(user);
+		if(state){
+			$('.conn_'+user.iduser).removeClass("node-icon-disconnected").addClass("node-icon-connected");
+			printMessageInGeneral('The user '+user.username+' has connected','green');
+		}
+		else{
+			$('.conn_'+user.iduser).removeClass("node-icon-connected").addClass("node-icon-disconnected");
+			printMessageInGeneral('The user '+user.username+' has disconnected','red');
+		}
+		$('#users-tree ul.list-group').each(function(idx){
+			var list = $(this).children(':not(:first)').sort(function(a,b){
+				var a_con = $(a).html().includes('node-icon-connected');
+				var b_con = $(b).html().includes('node-icon-connected');
+				if(a_con != b_con){
+					return (a_con?-1:1);
+				}
+				else{
+					return $(a).text().localeCompare($(b).text());
+				}
+			});
+			for(let i=0;i<list.length;i++){
+				list[i].parentNode.appendChild(list[i]);
+			}
+		});
+	}
 	
+	function printMessageInGeneral(message,color){
+		var messageToShow = "<font color='"+color+"'>" + message + "</font>";
+		
+		$('#messages').append($('<li>'+messageToShow).html(messageToShow));
+	}
 	
+	function getUsersTree(data){
+		return _.map(_.groupBy(_.map(data.sort(function(a,b){
+			return (a.connected? (b.connected? (a.username<b.username?1:(a.username>b.username?-1:0)) : -1) : (b.connected? 1 : (a.username<b.username?1:(a.username>b.username?-1:0))));
+		}),function(el){
+			return {
+				text: el.username,
+				connected: el.connected,
+				email: el.email,
+				username: el.username,
+				roomname: el.roomname,
+				icon: 'fa fa-circle' + (el.connected?' node-icon-connected':' node-icon-disconnected')+ (' conn_'+el.iduser)
+			};
+		}),'roomname'),function(value, key){
+			return {
+				text: key,
+				color: "blue",
+				expanded: true,
+				icon: '',
+				/*tags: [_.countBy(value,function(user){
+					return user.connected? 'connected':'disconnected';
+				}).connected],*/
+				nodes: value
+			};
+		});
+		
+		// FOR TESTS
+		/*
+		return [
+			{
+				text: "Global channel",
+				color: "blue",
+				expanded: true,
+				tags: [2],
+				nodes: [
+					{
+						text: "Child 1",
+						nodes: [
+							{
+								text: "Grandchild 1"
+							},
+							{
+								text: "Grandchild 2"
+							}
+						]
+					},
+					{
+						text: "Child 2"
+					}
+				]
+			},
+			{
+				text: "Parent 2"
+			},
+			{
+				text: "Parent 3"
+			},
+			{
+				text: "Parent 4"
+			},
+			{
+				text: "Parent 5"
+			}
+		];
+		*/
+	}
+
 	function playNewMessageSound(){
 		setTimeout(function(){ document.getElementById("playSoundBtn").click(); }, 250);
 	}

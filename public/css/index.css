@@ -1,6 +1,8 @@
 #body-div * { 
+	/*
 	margin: 0; 
 	padding: 0; 
+	*/
 	box-sizing: border-box; 
 }
       
@@ -227,8 +229,29 @@ z-index:4;}
 
 em{display:none;}
 
+
 #menu-box {
-	height: 2rem;
-	width: 2rem;
-	font-size: 1.3rem;
+	font-size: 12px;
+	display: list-item;
+	text-align: right;
+	margin: 5px;
 }
+
+#menu-box button {
+	-webkit-transition-duration: 0.2s; /* Safari */
+	transition-duration: 0.2s;
+	background-color: salmon;
+}
+
+#menu-box button:hover {
+	box-shadow: 0 6px 8px 0 rgba(0,0,0,0.12), 0 8.5px 25px 0 rgba(0,0,0,0.095);
+}
+
+.node-icon-connected {
+	color: lightgreen;
+}
+
+.node-icon-disconnected {
+	color: grey;
+}
+

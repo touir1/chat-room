@@ -1,4 +1,4 @@
 node_modules
-chatapp
+*.sqlite
 launch.bat
 server.log

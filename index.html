@@ -6,6 +6,7 @@
 	<!-- Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-treeview/1.2.0/bootstrap-treeview.min.css">
 	
 	<!-- Custom css -->
     <link rel="stylesheet" href="css/index.css">
@@ -15,11 +16,14 @@
 		<button id="playSoundBtn" onclick="beep.play()" hidden>Play Sound</button>
 		<button id="signInBtn" href="#signup" data-toggle="modal" data-target=".log-sign" data-backdrop="static" data-keyboard="false" hidden>Sign In/Register</button>
 		<div id="container">
-		<button id="disconnect" class="btn" alt="configuration"><i class="fas fa-sign-out-alt"></i></button>
+			<div id="menu-box">
+				<button id="disconnect" class="btn" alt="configuration"><i class="fas fa-sign-out-alt"> Disconnect</i></button>
+			</div>
 			<div id="messages-div">
 				<ul id="messages"></ul>
 			</div>
 			<div id="user-list-div">
+				<div id="users-tree"></div>
 			</div>
 		</div>
 		<form action="">
@@ -173,6 +177,8 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.2.0/js.cookie.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.10.0/js/md5.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-treeview/1.2.0/bootstrap-treeview.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.9.1/underscore-min.js"></script>
 	
 	<!-- Custom js script -->
 	<script src="js/index.js"></script>
