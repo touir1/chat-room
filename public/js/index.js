@@ -261,16 +261,20 @@ $(function () {
 		});
 		
 		socket.on('connected-user', function(data){
+			var user = connectedUsers[data.email];
 			if(!connectedUsers[data.email]){
 				loadChatWindow();
 			}
 			changeUserConnectionStatus(data.email,true);
+			printMessageInGeneral('The user '+user.username+' has connected','green');
 			//$('.conn_'+connectedUsers[data.email]).removeClass("node-icon-disconnected").addClass("node-icon-connected");
 		});
 		
 		socket.on('disconnected-user', function(data){
 			//loadChatWindow();
+			var user = connectedUsers[data.email];
 			changeUserConnectionStatus(data.email,false);
+			printMessageInGeneral('The user '+user.username+' has disconnected','red');
 			//$('.conn_'+connectedUsers[data.email]).removeClass("node-icon-connected").addClass("node-icon-disconnected");
 		});
 		
@@ -303,11 +307,13 @@ $(function () {
 					// showTags: true,
 					data: getUsersTree(data)
 				});
+				$('#users-tree').unbind();
 			}
 			else
 			{
 				console.log('error, failed to get rooms data');
 			}
+			$('')
 		})
 		.fail(function(err) {
 			console.log(err);
@@ -327,11 +333,37 @@ $(function () {
 		// console.log(user);
 		if(state){
 			$('.conn_'+user.iduser).removeClass("node-icon-disconnected").addClass("node-icon-connected");
-			printMessageInGeneral('The user '+user.username+' has connected','green');
+			user.connected = true;
 		}
 		else{
 			$('.conn_'+user.iduser).removeClass("node-icon-connected").addClass("node-icon-disconnected");
-			printMessageInGeneral('The user '+user.username+' has disconnected','red');
+			user.connected = false;
+		}
+		$('#users-tree ul.list-group').each(function(idx){
+			var list = $(this).children(':not(:first)').sort(function(a,b){
+				var a_con = $(a).html().includes('node-icon-connected');
+				var b_con = $(b).html().includes('node-icon-connected');
+				if(a_con != b_con){
+					return (a_con?-1:1);
+				}
+				else{
+					return $(a).text().localeCompare($(b).text());
+				}
+			});
+			for(let i=0;i<list.length;i++){
+				list[i].parentNode.appendChild(list[i]);
+			}
+		});
+	}
+	
+	function refreshUserConnectionStatus(){
+		for(email in connectedUsers){
+			if(connectedUsers[email].connected){
+				$('.conn_'+user.iduser).removeClass("node-icon-disconnected").addClass("node-icon-connected");
+			}
+			else{
+				$('.conn_'+user.iduser).removeClass("node-icon-connected").addClass("node-icon-disconnected");
+			}
 		}
 		$('#users-tree ul.list-group').each(function(idx){
 			var list = $(this).children(':not(:first)').sort(function(a,b){
