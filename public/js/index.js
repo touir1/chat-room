@@ -193,10 +193,17 @@ $(function () {
 		location.reload(true);
 	}
 	
+	function escapeHtml(html){
+		var text = document.createTextNode(html);
+		var p = document.createElement('p');
+		p.appendChild(text);
+		return p.innerHTML;
+	}
+	
 	function socketManager() {
 		var socket = io(window.location.origin,{query: 'email='+connectedEmail});
 		$('form').submit(function(){
-			var msg = $('#m').val().trim();
+			var msg = escapeHtml($('#m').val().trim());
 			if(msg){
 				socket.emit('chat message',	{
 					email: connectedEmail,
@@ -313,7 +320,6 @@ $(function () {
 			{
 				console.log('error, failed to get rooms data');
 			}
-			$('')
 		})
 		.fail(function(err) {
 			console.log(err);
